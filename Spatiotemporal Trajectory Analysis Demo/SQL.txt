@@ -1,0 +1,14 @@
+	CSG_String sql = "select startime from public.sensor114class limit 1";
+	res = PQexec(conn, sql);
+	starttime = atoll(PQgetvalue(res, 0, 0));
+	PQclear(res);
+	sql = "select endtime from public.sensor114class order by fid desc limit 1";
+	res = PQexec(conn, sql);
+	endtime = atoll(PQgetvalue(res, 0, 0));
+	PQclear(res);
+	lasttime = endtime - starttime;
+
+	sql = "select leibie from public.sensor114class order by leibie desc limit 1";
+	res = PQexec(conn, sql);
+	classcount = atoi(PQgetvalue(res, 0, 0));
+	PQclear(res);
