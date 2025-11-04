@@ -19,7 +19,7 @@ Project Structure
 ```
 Spatiotemporal Trajectory Analysis/
 ├── data.sql/                    # POSTGRESQL data files
-└── Spatiotemporal Trajectory Analysis Demo/                   # Project directory
+└── Spatiotemporal Trajectory Analysis Demo/ # Project directory
     ├── res/                     # Resource files
     ├── mathplot/                # Visualization files
     ├── floorplanshp/            # 3D scene data files
@@ -27,38 +27,43 @@ Spatiotemporal Trajectory Analysis/
 └── README.md                    # This file
 ```
 
-## 五个步骤对应的代码和说明
+## Code and Descriptions Corresponding to the Five Steps
 
-### 1. 表达（Representation）  
-对应地理空间原始数据与领域知识的编码，将其映射为数学空间的表示形式。  
-- **trajectory_analysis_module.cpp**：定义模块输入参数（`SensorData`、`Floor`、`SensorPoint`），这些参数对应地理空间的原始数据（传感器数据、楼层信息、传感器位置），是表达层对地理空间数据的抽象表示。  
-- **trajctory_analysis_scalculate.cpp（构造函数）**：初始化传感器节点列表（`m_comboBox1`中的传感器ID）、数据库连接信息，将地理空间的传感器实体映射为可处理的节点数据；读取`linyu`表中的邻域关系（上下左右节点ID），将地理拓扑知识编码为结构化的节点关系。  
-- **trajctory_analysis_tcalculate.cpp（构造函数）**：通过数据库查询`linyu`表，构建节点拓扑结构（`LNode`包含上下左右节点ID），将地理空间的拓扑知识转化为数学空间的节点关联数据。  
+### 1. Representation
 
+Corresponds to encoding raw geospatial data and domain knowledge, mapping them into representations within a mathematical space.
 
-### 2. 推理（Reasoning）  
-对应数学空间中GA算子的推理过程，基于已有数据和规则推导关系或状态。  
-- **trajctory_analysis_scalculate.cpp中的`Update_Semantics`函数**：根据时间窗口查询某节点（`selectID`）前后的传感器激活数据（`Pres`为前序数据，`Ares`为后序数据），结合`linyu`表的邻域关系，推理出节点的前后状态队列（`preque`、`aftque`），属于基于时空关系的逻辑推理。  
-- **trajctory_analysis_scalculate.cpp中的`Set_Semantics`函数**：根据`preque`和`aftque`的大小、方向（`direction`），推理出语义编码（如`eU-eC`表示“进入”，`eC-eU`表示“离开”），是基于规则的语义推理过程。  
+-   **trajectory_analysis_module.cpp**: Defines module input parameters (`SensorData`, `Floor`, `SensorPoint`). These parameters correspond to raw geospatial data (sensor data, floor information, sensor locations) and are the abstract representation of geospatial data at the representation layer.
+-   **trajctory_analysis_scalculate.cpp (Constructor)**: Initializes the sensor node list (sensor IDs in `m_comboBox1`) and database connection information, mapping physical sensor entities in geographic space into processable node data; reads neighborhood relationships (top, bottom, left, right node IDs) from the `linyu` table, encoding geographic topology knowledge into structured node relationships.
+-   **trajctory_analysis_tcalculate.cpp (Constructor)**: Builds the node topology structure (`LNode` contains top, bottom, left, right node IDs) by querying the `linyu` table in the database, transforming geographic topology knowledge into node association data in the mathematical space.
 
+### 2. Reasoning
 
-### 3. 生成（Generation）  
-对应数学空间中生成新的结构（如轨迹、语义矩阵等）。  
-- **trajctory_analysis_tcalculate.cpp中的`ComputePath`函数**：基于传感器激活数据（`res`）和节点拓扑（`tNode`），生成轨迹列表（`trajectList`）和最终轨迹结果（`traResult`），属于轨迹结构的生成。  
-- **trajctory_analysis_scalculate.cpp中的`DrawMatrix`函数**：根据时间序列的传感器激活数据，生成二进制矩阵（`a`和`b`矩阵），并将其可视化为位图（`wxBitmap`），属于数据矩阵的生成。  
+Corresponds to the reasoning process using GA operators within the mathematical space, deriving relationships or states based on existing data and rules.
 
+-   **`Update_Semantics` function in trajctory_analysis_scalculate.cpp**: Queries sensor activation data before and after a specific node (`selectID`) within a time window (`Pres` for preceding data, `Ares` for subsequent data), combines it with neighborhood relationships from the `linyu` table, and infers the node's preceding and subsequent state queues (`preque`, `aftque`). This is a logical reasoning process based on spatiotemporal relationships.
+-   **`Set_Semantics` function in trajctory_analysis_scalculate.cpp**: Infers semantic codes (e.g., `eU-eC` for "enter", `eC-eU` for "leave") based on the size and direction (`direction`) of `preque` and `aftque`. This is a rule-based semantic reasoning process.
 
-### 4. 校验（Synthesis）  
-对应对生成的结构进行约束验证，确保符合规则或拓扑关系。  
-- **trajctory_analysis_tcalculate.cpp中的`ComputePath`函数**：通过`ifexist`函数检查节点是否重复，`isAdjacent`函数验证节点是否相邻，确保生成的轨迹符合拓扑约束；通过时间窗口（如`30*1000`毫秒）限制，确保轨迹的时间合理性，属于对生成轨迹的校验。  
-- 代码中隐含的数据库查询结果校验（如`PQntuples`检查查询结果数量）：确保输入数据的有效性，避免空数据或错误数据参与计算，属于数据层面的校验。  
+### 3. Generation
 
+Corresponds to generating new structures (such as trajectories, semantic matrices) within the mathematical space.
 
-### 5. 计算（Computing）  
-对应将数学空间的表达式转换为可执行工作流，执行计算并映射回地理空间。  
-- **trajctory_analysis_tcalculate.cpp和trajctory_analysis_scalculate.cpp中的数据库操作**：通过`Query`、`QueryTraj`函数执行SQL查询，获取计算所需的传感器数据（如`fireday`表的时间和节点ID），属于计算层的数据获取。  
-- **`ComputePath`和`DrawMatrix`中的具体计算逻辑**：如`ComputePath`中的轨迹遍历与节点关系计算，`DrawMatrix`中的矩阵赋值与绘图操作，属于实际的计算执行。  
-- **trajectory_analysis_dialog.cpp中的交互组件**：工具栏（`m_toolbar`）的“Start”按钮、菜单（`m_Traj`、`m_Sem`）的“Trajectory Computation”“Semantic Computation”选项，触发计算流程，将数学空间的操作转换为可执行工作流，属于计算层的调度。  
+-   **`ComputePath` function in trajctory_analysis_tcalculate.cpp**: Generates a trajectory list (`trajectList`) and final trajectory results (`traResult`) based on sensor activation data (`res`) and node topology (`tNode`). This involves the generation of trajectory structures.
+-   **`DrawMatrix` function in trajctory_analysis_scalculate.cpp**: Generates binary matrices (`a` and `b` matrices) from time-series sensor activation data and visualizes them as bitmaps (`wxBitmap`). This involves the generation of data matrices.
 
+### 4. Synthesis
 
-综上，GA模型的五个部分均通过上述`.cpp`文件中的函数和逻辑实现，核心围绕地理空间数据的编码、推理规则的应用、结构生成、约束校验及计算执行展开。
+Corresponds to validating the generated structures against constraints to ensure they conform to rules or topological relationships.
+
+-   **`ComputePath` function in trajctory_analysis_tcalculate.cpp**: Uses the `ifexist` function to check for duplicate nodes and the `isAdjacent` function to verify node adjacency, ensuring the generated trajectory complies with topological constraints; uses time window constraints (e.g., `30*1000` milliseconds) to ensure the temporal reasonableness of the trajectory. This constitutes validation of the generated trajectory.
+-   Implicit validation of database query results (e.g., checking the number of results with `PQntuples`): Ensures the validity of input data, preventing empty or erroneous data from participating in calculations. This belongs to data-level validation.
+
+### 5. Computing
+
+Corresponds to converting expressions from the mathematical space into executable workflows, performing computations, and mapping the results back to geographic space.
+
+-   **Database operations in trajctory_analysis_tcalculate.cpp and trajctory_analysis_scalculate.cpp**: Execute SQL queries via `Query`, `QueryTraj` functions to obtain sensor data required for calculations (e.g., time and node IDs from the `fireday` table). This belongs to data acquisition at the computing layer.
+-   **Specific computational logic in `ComputePath` and `DrawMatrix`**: For example, trajectory traversal and node relationship calculation in `ComputePath`, matrix assignment and drawing operations in `DrawMatrix`. These represent the actual execution of computations.
+-   **Interactive components in trajectory_analysis_dialog.cpp**: The "Start" button on the toolbar (`m_toolbar`), and the "Trajectory Computation"/"Semantic Computation" options in the menu (`m_Traj`, `m_Sem`) trigger the computation workflow, converting mathematical operations into an executable workflow. This belongs to scheduling at the computing layer.
+
+In summary, the five parts of the GA model are implemented through the functions and logic in the aforementioned `.cpp` files. The core revolves around encoding geospatial data, applying reasoning rules, generating structures, validating constraints, and executing computations.
